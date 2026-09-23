@@ -1,0 +1,1001 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Баллы</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg:#eff1f5;--surface:#ffffff;--ink:#111827;--muted:#5b6578;--hair:#e1e5ec;
+  --note:#0e5a46;--note-ink:#f1fbf6;
+  --accent:#0e6b52;--accent-ink:#ffffff;
+  --earn:#087048;--earn-bg:#e0f4ea;--lose:#b93325;--lose-bg:#fbe8e5;--brass:#8a5606;--brass-bg:#faefd6;
+  --toast-bg:#1b2333;--toast-ink:#f3f6fb;--toast-act:#7ee0b8;
+  --shadow:0 -10px 34px rgba(15,23,42,.22);
+  --tabh:58px;--odo:64px;
+}
+[data-theme="dark"]{
+  --bg:#0f141d;--surface:#161c27;--ink:#eef2f8;--muted:#8b95a7;--hair:#252d3b;
+  --note:#0d3d31;--note-ink:#eafaf2;
+  --accent:#2aa57f;--accent-ink:#04231a;
+  --earn:#48d6a2;--earn-bg:#12332b;--lose:#ff7f6c;--lose-bg:#3a1e1b;--brass:#e8b451;--brass-bg:#33290f;
+  --toast-bg:#2a3446;--toast-ink:#f3f6fb;--toast-act:#7ee0b8;
+  --shadow:0 -10px 34px rgba(0,0,0,.55);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font:16px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior-y:none;touch-action:manipulation;padding-bottom:calc(var(--tabh) + 96px + env(safe-area-inset-bottom))}
+body.lock{overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ic{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.s{width:15px;height:15px;stroke-width:2}
+.ic .fill{fill:currentColor;fill-opacity:.2;stroke:none}
+
+/* banknote */
+.note{position:relative;margin:calc(10px + env(safe-area-inset-top)) 12px 0;padding:14px 18px 16px;border-radius:18px;background:var(--note);color:var(--note-ink);overflow:hidden;isolation:isolate}
+.note::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.17;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='36' viewBox='0 0 120 36'%3E%3Cg fill='none' stroke='%239fe0c4' stroke-width='1'%3E%3Cpath d='M0 18C20 0 40 0 60 18S100 36 120 18'/%3E%3Cpath d='M0 12C20-6 40-6 60 12S100 30 120 12'/%3E%3Cpath d='M0 24C20 6 40 6 60 24S100 42 120 24'/%3E%3C/g%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='28' viewBox='0 0 84 28'%3E%3Cg fill='none' stroke='%239fe0c4' stroke-width='.8'%3E%3Cpath d='M0 14C14 0 28 0 42 14S70 28 84 14'/%3E%3Cpath d='M0 8C14-6 28-6 42 8S70 22 84 8'/%3E%3C/g%3E%3C/svg%3E");background-size:120px 36px,84px 28px;background-position:0 0,17px 9px}
+.note::after{content:"";position:absolute;inset:6px;border:1px solid rgba(159,224,196,.3);border-radius:13px;pointer-events:none}
+.note-top{display:flex;align-items:center;justify-content:space-between}
+.note-label{font-size:14px;font-weight:600;opacity:.85}
+.note-btn{width:36px;height:36px;margin:-6px -8px -6px 0;display:grid;place-items:center;border-radius:50%;opacity:.85}
+.odo{display:flex;align-items:center;gap:4px;margin:8px 0 12px;font:800 var(--odo)/1 ui-rounded,"SF Pro Rounded",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums;height:1.16em}
+.odo .sign{flex:none;width:.4em;height:.1em;margin-right:.06em;border-radius:.05em;background:#ffb4a6}
+.odo .gap{width:.14em}
+.odo .wheel{position:relative;width:.66em;height:1.16em;border-radius:.14em;overflow:hidden;background:rgba(0,0,0,.28);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.odo .wheel::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,.38),transparent 30%,transparent 70%,rgba(0,0,0,.38));pointer-events:none}
+.odo .strip{display:block;transition:transform .9s cubic-bezier(.16,.84,.24,1)}
+.odo .strip span{display:block;height:1.16em;line-height:1.16em;text-align:center}
+.note-stats{display:flex;gap:22px;font-size:14px}
+.note-stats div{display:flex;align-items:baseline;gap:6px}
+.note-stats b{font-size:17px;font-variant-numeric:tabular-nums}
+.note-stats span{opacity:.75}
+.note-stats b.up{color:#9af0c8}
+.note-stats b.dn{color:#ffb4a6}
+
+/* lists */
+.sec{margin-top:20px}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:0 16px 7px;font-size:13px;font-weight:600;color:var(--muted)}
+.sec-h b{font-size:15px;font-variant-numeric:tabular-nums;display:inline-flex;align-items:center;gap:5px}
+.sec-h b.up,.avail{color:var(--earn)}
+.sec-h b.dn{color:var(--lose)}
+.sec.over .sec-h{color:var(--lose)}
+.rows{background:var(--surface);border-block:1px solid var(--hair)}
+.row{display:flex;align-items:center;gap:12px;padding:11px 14px 11px 12px;min-height:62px;cursor:pointer}
+.row + .row{border-top:1px solid var(--hair)}
+.row:active{background:var(--bg)}
+.row.h{cursor:default}
+.row.h:active{background:none}
+.txt{flex:1;min-width:0}
+.t{font-weight:500;overflow-wrap:anywhere}
+.m{display:flex;flex-wrap:wrap;align-items:center;gap:2px 12px;margin-top:3px;font-size:13px;color:var(--muted)}
+.m span{display:inline-flex;align-items:center;gap:4px}
+.m .bad{color:var(--lose);font-weight:600}
+.is-done .t{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+.is-done .pill{opacity:.5}
+.chk{position:relative;width:30px;height:30px;border-radius:50%;border:2px solid var(--muted);display:grid;place-items:center;flex:none;color:var(--accent-ink);transition:background .15s,border-color .15s}
+.chk::after{content:"";position:absolute;inset:-9px}
+.chk.over{border-color:var(--lose)}
+.chk.on{background:var(--accent);border-color:var(--accent)}
+.chk .ic{width:18px;height:18px;stroke-width:2.8}
+.chk.pop{animation:pop .26s ease-out}
+@keyframes pop{0%{transform:scale(.8)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:999px;font-weight:700;font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap;flex:none}
+button.pill{padding:10px 15px;font-size:16px;min-height:42px}
+button.pill:active{transform:scale(.96)}
+.pill.earn{background:var(--earn-bg);color:var(--earn)}
+.pill.lose{background:var(--lose-bg);color:var(--lose)}
+.pill.brass{background:var(--brass-bg);color:var(--brass)}
+.pill.off{background:var(--bg);color:var(--muted)}
+.pill .ic{width:18px;height:18px}
+.ico{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:none}
+.ico .ic{width:19px;height:19px}
+.ico.earn{background:var(--earn-bg);color:var(--earn)}
+.ico.lose{background:var(--lose-bg);color:var(--lose)}
+.ico.brass{background:var(--brass-bg);color:var(--brass)}
+.x{width:36px;height:36px;margin-right:-8px;display:grid;place-items:center;color:var(--muted);border-radius:50%}
+.x .ic{width:18px;height:18px}
+.link{color:var(--accent);font-size:13px;font-weight:600}
+.more{padding:16px;text-align:center}
+.more .link{font-size:15px}
+.hint{display:flex;gap:10px;align-items:flex-start;margin:16px 12px 0;padding:12px 14px;border-radius:12px;background:var(--brass-bg);color:var(--brass);font-size:14px;line-height:1.4}
+.hint p{margin:0}
+.hint button{margin:-4px -6px 0 auto;padding:4px 8px;font-size:22px;line-height:1;color:inherit;opacity:.8}
+.empty{padding:56px 32px;text-align:center;color:var(--muted)}
+.empty .et{font-size:18px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.empty p{margin:0;font-size:15px;line-height:1.45}
+
+/* week chart */
+.chart{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:14px 14px 12px;background:var(--surface);border-block:1px solid var(--hair)}
+.chart .col{display:flex;flex-direction:column;align-items:center;min-width:0}
+.chart .half{width:100%;height:32px;display:flex;justify-content:center}
+.chart .up{align-items:flex-end;border-bottom:1.5px solid var(--hair)}
+.chart .dn{align-items:flex-start}
+.chart i{display:block;width:60%;min-height:3px;border-radius:3px}
+.chart i.pos{background:var(--earn)}
+.chart i.neg{background:var(--lose)}
+.chart em{font-style:normal;font-size:12px;color:var(--muted);margin-top:7px}
+.chart .now em{color:var(--ink);font-weight:700}
+.chart small{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted)}
+.chart small.p{color:var(--earn)}
+.chart small.n{color:var(--lose)}
+
+/* chrome */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;background:var(--surface);border-top:1px solid var(--hair);padding-bottom:env(safe-area-inset-bottom)}
+.tabs button{flex:1;height:var(--tabh);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;font-weight:600;color:var(--muted);position:relative}
+.tabs button.on{color:var(--accent)}
+.tabs .bdg{position:absolute;top:5px;left:calc(50% + 7px);min-width:17px;height:17px;padding:0 5px;border-radius:9px;background:var(--lose);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center}
+.fab{position:fixed;right:16px;bottom:calc(var(--tabh) + 16px + env(safe-area-inset-bottom));z-index:9;width:56px;height:56px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;box-shadow:0 6px 18px rgba(0,0,0,.3);transition:transform .2s}
+.fab .ic{width:26px;height:26px;stroke-width:2.2}
+.fab:active{transform:scale(.94)}
+.fab.hide,.toast-on .fab{transform:translateY(150px)}
+.toast{position:fixed;left:12px;right:12px;bottom:calc(var(--tabh) + 12px + env(safe-area-inset-bottom));z-index:30;display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:14px;background:var(--toast-bg);color:var(--toast-ink);font-size:15px;box-shadow:0 8px 24px rgba(0,0,0,.3);transform:translateY(16px);opacity:0;pointer-events:none;transition:transform .2s,opacity .2s}
+.toast.on{transform:none;opacity:1;pointer-events:auto}
+.toast .tm{flex:1;min-width:0;overflow-wrap:anywhere}
+.toast button{color:var(--toast-act);font-weight:700;padding:6px 2px}
+
+/* sheet */
+.scrim{position:fixed;inset:0;z-index:20;background:rgba(6,10,18,.55);opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;background:var(--surface);border-radius:20px 20px 0 0;box-shadow:var(--shadow);max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain;padding:8px 16px 0;transform:translateY(105%);visibility:hidden;transition:transform .28s cubic-bezier(.2,.9,.25,1),visibility 0s .28s}
+.sheet.on{transform:none;visibility:visible;transition:transform .28s cubic-bezier(.2,.9,.25,1)}
+.grab{width:38px;height:4px;border-radius:2px;background:var(--hair);margin:2px auto 12px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 16px}
+.sh h2{font-size:19px;font-weight:700;margin:0}
+.sh .link{font-size:15px}
+.link.bad{color:var(--lose)}
+.foot{position:sticky;bottom:0;background:var(--surface);padding:10px 0 calc(16px + env(safe-area-inset-bottom))}
+.f{margin:0 0 16px}
+.f > label,.f > .lab{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:0 0 7px}
+.in{width:100%;min-height:48px;padding:11px 14px;border:1.5px solid var(--hair);border-radius:12px;background:var(--bg);outline:none;appearance:none;-webkit-appearance:none}
+.in:focus{border-color:var(--accent)}
+.in.bad{border-color:var(--lose)}
+textarea.in{min-height:96px;font-size:13px;line-height:1.35;resize:vertical;word-break:break-all}
+.err{color:var(--lose);font-size:13px;margin-top:6px;min-height:0}
+.err:empty{display:none}
+.help{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.4}
+.chips{display:flex;gap:8px;margin:9px -16px 0;padding:0 16px;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;padding:7px 13px;border-radius:999px;background:var(--bg);border:1.5px solid var(--hair);font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.seg{display:flex;background:var(--bg);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;min-height:40px;padding:8px 6px;border-radius:9px;font-size:14px;font-weight:600;color:var(--muted)}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{display:block;width:100%;min-height:50px;padding:13px;border-radius:14px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:16px}
+.btn.sub{background:var(--bg);color:var(--ink);font-weight:600}
+.btn.ghost{background:none;color:var(--lose);margin-top:8px;font-weight:600}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+
+/* in-app confirm (fallback outside Telegram) */
+.dlg{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(6,10,18,.55)}
+.dlg.on{display:flex}
+.dlg-box{width:100%;max-width:340px;background:var(--surface);border-radius:16px;padding:20px 18px 14px}
+.dlg-box p{margin:0 0 16px;line-height:1.4}
+.dlg-btns{display:flex;justify-content:flex-end;gap:6px}
+.dlg-btns button{padding:10px 14px;font-weight:700;border-radius:10px;color:var(--muted)}
+.dlg-btns .ok{color:var(--accent)}
+.dlg-btns .ok.bad{color:var(--lose)}
+
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important;transition-delay:0s!important}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20"/><path d="M3.8 6.6l1.3 1.3 2.2-2.4M3.8 12.1l1.3 1.3 2.2-2.4M3.8 17.6l1.3 1.3 2.2-2.4"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3.8l9 15.6H3L12 3.8z"/><path d="M12 10v4.2M12 17.2v.1"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><path d="M4.5 11h15v9h-15zM3.5 7.5h17V11h-17zM12 7.5V20"/><path d="M12 7.5C10.5 4.2 7 4.6 7.8 6.6c.4 1 4.2.9 4.2.9zM12 7.5c1.5-3.3 5-2.9 4.2-.9-.4 1-4.2.9-4.2.9z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24"><path d="M17 3.5l3 3-3 3M20 6.5H8.5A4.5 4.5 0 0 0 4 11M7 20.5l-3-3 3-3M4 17.5h11.5A4.5 4.5 0 0 0 20 13"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24"><circle class="fill" cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="4.6"/></symbol>
+</svg>
+
+<section class="note" id="hero">
+  <div class="note-top">
+    <span class="note-label">Баланс</span>
+    <button type="button" class="note-btn" id="btnSettings" aria-label="Настройки"><svg class="ic"><use href="#i-sliders"/></svg></button>
+  </div>
+  <div class="odo" id="odo" role="img" aria-label="Баланс"></div>
+  <div class="note-stats">
+    <div><b id="sToday">0</b><span>сегодня</span></div>
+    <div><b id="sWeek">0</b><span>за 7 дней</span></div>
+  </div>
+</section>
+
+<main id="view"><div class="empty"><p>Загружаю…</p></div></main>
+
+<button type="button" class="fab" id="fab" aria-label="Добавить"><svg class="ic"><use href="#i-plus"/></svg></button>
+
+<nav class="tabs" id="tabs">
+  <button type="button" data-tab="tasks" class="on"><svg class="ic"><use href="#i-list"/></svg><span>Задачи</span><i class="bdg" id="bdg" hidden></i></button>
+  <button type="button" data-tab="pens"><svg class="ic"><use href="#i-warn"/></svg><span>Штрафы</span></button>
+  <button type="button" data-tab="shop"><svg class="ic"><use href="#i-gift"/></svg><span>Награды</span></button>
+  <button type="button" data-tab="hist"><svg class="ic"><use href="#i-clock"/></svg><span>История</span></button>
+</nav>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-hidden="true"></div>
+<div class="dlg" id="dlg" role="alertdialog" aria-modal="true">
+  <div class="dlg-box"><p id="dlg-msg"></p><div class="dlg-btns"><button type="button" id="dlg-no">Отмена</button><button type="button" id="dlg-ok" class="ok">OK</button></div></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= helpers ================= */
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Math.random().toString(36).slice(2, 9);
+const plural = (n, a, b, c) => { n = Math.abs(n); const m10 = n % 10, m100 = n % 100; return (m10 === 1 && m100 !== 11) ? a : (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) ? b : c; };
+const num = n => String(Math.abs(Math.round(n))).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
+const sgn = n => (n > 0 ? '+' : n < 0 ? '\u2212' : '') + num(n);
+const pad = n => (n < 10 ? '0' : '') + n;
+const ds = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const today = () => ds(new Date());
+const pd = s => { const p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); };
+const addDays = (s, n) => { const d = pd(s); d.setDate(d.getDate() + n); return ds(d); };
+const diffDays = (a, b) => Math.round((pd(a) - pd(b)) / 864e5);
+const startOf = s => pd(s).getTime();
+const endOfDay = s => startOf(addDays(s, 1)) - 1;
+const dayOf = t => ds(new Date(t));
+const hhmm = t => { const d = new Date(t); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+const MON = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+const WD = ['вс','пн','вт','ср','чт','пт','сб'];
+function humanDate(s){
+  const d = diffDays(s, today());
+  if(d === 0) return 'сегодня';
+  if(d === 1) return 'завтра';
+  if(d === -1) return 'вчера';
+  const x = pd(s); return x.getDate() + ' ' + MON[x.getMonth()];
+}
+function dayLabel(s){
+  const d = diffDays(s, today());
+  if(d === 0) return 'Сегодня';
+  if(d === -1) return 'Вчера';
+  const x = pd(s); return x.getDate() + ' ' + MON[x.getMonth()] + ', ' + WD[x.getDay()];
+}
+
+/* ================= platform ================= */
+const tg = (window.Telegram && window.Telegram.WebApp) || null;
+const inTG = !!(tg && tg.platform && tg.platform !== 'unknown');
+function ver(v){ try { return inTG && tg.isVersionAtLeast(v); } catch(e){ return false; } }
+const hasCloud = ver('6.9') && !!tg.CloudStorage;
+function hap(kind){
+  if(!ver('6.1') || !tg.HapticFeedback) return;
+  try {
+    if(kind === 'success' || kind === 'warning' || kind === 'error') tg.HapticFeedback.notificationOccurred(kind);
+    else if(kind === 'select') tg.HapticFeedback.selectionChanged();
+    else tg.HapticFeedback.impactOccurred('light');
+  } catch(e){}
+}
+
+/* ================= storage: Telegram Cloud -> localStorage -> memory ================= */
+const CHUNK = 1300;           // safe for the 4096 limit even if counted in bytes
+const MAX_EV = 1200;
+const mem = {};
+let localOK = true;
+try { localStorage.setItem('mp_probe', '1'); localStorage.removeItem('mp_probe'); } catch(e){ localOK = false; }
+const lsGet = k => { try { return localStorage.getItem(k); } catch(e){ return mem[k] === undefined ? null : mem[k]; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch(e){ mem[k] = v; } };
+
+function cloud(method, a, b){
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), 8000);
+    const cb = (err, res) => { clearTimeout(timer); err ? reject(new Error(String(err))) : resolve(res); };
+    try {
+      if(b === undefined) tg.CloudStorage[method](a, cb); else tg.CloudStorage[method](a, b, cb);
+    } catch(e){ clearTimeout(timer); reject(e); }
+  });
+}
+function chunkStr(s){
+  const out = []; let i = 0;
+  while(i < s.length){
+    let j = Math.min(i + CHUNK, s.length);
+    if(j < s.length){ const c = s.charCodeAt(j - 1); if(c >= 0xD800 && c <= 0xDBFF) j--; }   // never split a surrogate pair
+    out.push(s.slice(i, j)); i = j;
+  }
+  return out;
+}
+const lastChunks = {}, lastBody = {}, pending = {};
+let sync = hasCloud ? 'ok' : 'off', pumping = false, retryTimer = null;
+
+async function cloudLoad(name){
+  lastChunks[name] = [];
+  const n = parseInt(await cloud('getItem', 'mp_' + name + '_n'), 10);
+  if(!(n > 0)) return null;
+  const keys = []; for(let i = 0; i < n; i++) keys.push('mp_' + name + '_' + i);
+  const vals = await cloud('getItems', keys);
+  const parts = keys.map(k => (vals && vals[k]) || '');
+  const d = JSON.parse(parts.join(''));
+  lastChunks[name] = parts;
+  return d;
+}
+async function cloudSave(name, s){
+  const chunks = chunkStr(s), prev = lastChunks[name] || [];
+  for(let i = 0; i < chunks.length; i++){
+    if(prev[i] !== chunks[i]) await cloud('setItem', 'mp_' + name + '_' + i, chunks[i]);
+  }
+  await cloud('setItem', 'mp_' + name + '_n', String(chunks.length));
+  if(prev.length > chunks.length){
+    const rm = []; for(let i = chunks.length; i < prev.length; i++) rm.push('mp_' + name + '_' + i);
+    await cloud('removeItems', rm);
+  }
+  lastChunks[name] = chunks;
+}
+async function pump(){
+  if(pumping) return;
+  pumping = true;
+  try {
+    let name;
+    while((name = Object.keys(pending)[0])){
+      const s = pending[name]; delete pending[name];
+      try { await cloudSave(name, s); sync = 'ok'; }
+      catch(e){
+        sync = 'err'; if(!(name in pending)) pending[name] = s;
+        clearTimeout(retryTimer); retryTimer = setTimeout(pump, 15000);
+        break;
+      }
+    }
+  } finally { pumping = false; }
+}
+const bodyOf = d => JSON.stringify(Object.assign({}, d, {t: 0}));
+
+async function loadDoc(name, seed){
+  let local = null, remote = null;
+  try { const s = lsGet('mp_' + name); if(s) local = JSON.parse(s); } catch(e){}
+  if(hasCloud){ try { remote = await cloudLoad(name); } catch(e){ sync = 'err'; lastChunks[name] = []; } }
+  if(remote && (!local || (remote.t || 0) >= (local.t || 0))){
+    lsSet('mp_' + name, JSON.stringify(remote));
+    return {d: remote, fresh: false};
+  }
+  if(local){
+    if(hasCloud && (!remote || (local.t || 0) > (remote.t || 0))){ pending[name] = JSON.stringify(local); pump(); }
+    return {d: local, fresh: false};
+  }
+  return {d: seed(), fresh: true};
+}
+function persist(name){
+  const d = name === 'cfg' ? cfg : log, body = bodyOf(d);
+  if(body === lastBody[name]) return;
+  lastBody[name] = body; d.t = Date.now();
+  const s = JSON.stringify(d);
+  lsSet('mp_' + name, s);
+  if(hasCloud){ pending[name] = s; pump(); }
+}
+
+/* ================= data model ================= */
+let cfg = null, log = null;
+const ui = {tab: 'tasks', hist: 60};
+let sheetCtx = null, undoSnap = null, renderedDay = today();
+
+function seedCfg(){
+  const d = today();
+  return {v:1, t:0, hint:true,
+    tasks:[
+      {id:uid(), name:'Зарядка', pts:3, pen:2, due:d, rep:'d', done:false, missed:false},
+      {id:uid(), name:'Выучить 20 слов', pts:5, pen:3, due:d, rep:'d', done:false, missed:false},
+      {id:uid(), name:'Закончить презентацию', pts:20, pen:15, due:addDays(d, 3), rep:'', done:false, missed:false},
+      {id:uid(), name:'Разобрать почту', pts:4, pen:0, due:'', rep:'', done:false, missed:false}
+    ],
+    pens:[
+      {id:uid(), name:'Залип в соцсетях', pts:5},
+      {id:uid(), name:'Сорвал план дня', pts:10},
+      {id:uid(), name:'Лёг спать после полуночи', pts:5}
+    ],
+    shop:[
+      {id:uid(), name:'+30 минут Instagram', cost:10, lim:0, per:'d'},
+      {id:uid(), name:'Вечер сериала', cost:25, lim:0, per:'d'},
+      {id:uid(), name:'Импульсивная покупка до 10\u00a0000 ₽', cost:100, lim:1, per:'m'}
+    ]};
+}
+const seedLog = () => ({v:1, t:0, base:0, ev:[]});
+const int = (v, min, dflt) => { const n = parseInt(v, 10); return isFinite(n) ? Math.max(min, n) : dflt; };
+const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '');
+function normCfg(c){
+  c = (c && typeof c === 'object') ? c : {};
+  const arr = a => Array.isArray(a) ? a.filter(x => x && x.id && typeof x.name === 'string' && x.name.trim()) : [];
+  return {v:1, t:+c.t || 0, hint: c.hint !== false,
+    tasks: arr(c.tasks).map(k => ({id:String(k.id), name:k.name.slice(0, 80), pts:int(k.pts, 1, 1), pen:int(k.pen, 0, 0), due:isDate(k.due) ? k.due : '', rep:(k.rep === 'd' || k.rep === 'w') ? k.rep : '', done:!!k.done, missed:!!k.missed})),
+    pens: arr(c.pens).map(p => ({id:String(p.id), name:p.name.slice(0, 80), pts:int(p.pts, 1, 1)})),
+    shop: arr(c.shop).map(r => ({id:String(r.id), name:r.name.slice(0, 80), cost:int(r.cost, 1, 1), lim:int(r.lim, 0, 0), per:(r.per === 'd' || r.per === 'w' || r.per === 'm') ? r.per : 'm'}))};
+}
+function normLog(l){
+  l = (l && typeof l === 'object') ? l : {};
+  const ev = (Array.isArray(l.ev) ? l.ev : []).filter(e => e && isFinite(e.t) && isFinite(e.p) && typeof e.n === 'string' && 'empba'.indexOf(e.k) > -1 && e.k.length === 1)
+    .map(e => { const o = {t:+e.t, k:e.k, n:e.n.slice(0, 80), p:Math.round(+e.p)}; if(e.r) o.r = String(e.r); return o; });
+  ev.sort((a, b) => a.t - b.t);
+  return {v:1, t:+l.t || 0, base:Math.round(+l.base) || 0, ev};
+}
+const balance = () => log.base + log.ev.reduce((s, e) => s + e.p, 0);
+function addEvent(k, n, p, r, t){
+  const e = {t: t || Date.now(), k, n, p}; if(r) e.r = r;
+  log.ev.push(e);
+}
+function compact(){
+  log.ev.sort((a, b) => a.t - b.t);
+  if(log.ev.length > MAX_EV){
+    const cut = log.ev.splice(0, log.ev.length - MAX_EV);
+    log.base += cut.reduce((s, e) => s + e.p, 0);
+  }
+}
+function save(){ compact(); persist('cfg'); persist('log'); }
+function commit(){ save(); render(); }
+function snap(){ undoSnap = {c: JSON.stringify(cfg), l: JSON.stringify(log)}; }
+function undo(){
+  if(!undoSnap) return;
+  cfg = JSON.parse(undoSnap.c); log = JSON.parse(undoSnap.l); undoSnap = null;
+  hideToast(); commit(); hap('light');
+}
+
+/* overdue handling: one-off tasks are fined once; repeating tasks are fined per missed period */
+function tick(){
+  const t = today(); let n = 0, sum = 0, changed = false;
+  cfg.tasks.forEach(k => {
+    if(!k.due) return;
+    if(k.rep){
+      const step = k.rep === 'w' ? 7 : 1; let miss = 0, guard = 0;
+      while(k.due < t && guard++ < 400){
+        if(!k.done && k.pen > 0 && miss < 7){ addEvent('m', k.name, -k.pen, k.id, endOfDay(k.due)); miss++; n++; sum += k.pen; }
+        k.done = false; k.due = addDays(k.due, step); changed = true;
+      }
+    } else if(!k.done && !k.missed && k.due < t){
+      k.missed = true; changed = true;
+      if(k.pen > 0){ addEvent('m', k.name, -k.pen, k.id, endOfDay(k.due)); n++; sum += k.pen; }
+    }
+  });
+  return {n, sum, changed};
+}
+function notifyMiss(r){ if(r.n) toast('Просрочка: ' + r.n + ' ' + plural(r.n, 'штраф', 'штрафа', 'штрафов') + ', \u2212' + num(r.sum)); }
+
+/* ================= stats ================= */
+function netByDay(){
+  const m = {};
+  log.ev.forEach(e => { if(e.k !== 'b'){ const d = dayOf(e.t); m[d] = (m[d] || 0) + e.p; } });
+  return m;
+}
+function perfSince(ts){ let s = 0; log.ev.forEach(e => { if(e.k !== 'b' && e.t >= ts) s += e.p; }); return s; }
+function periodStart(per){
+  const n = new Date(), y = n.getFullYear(), m = n.getMonth(), d = n.getDate();
+  if(per === 'd') return new Date(y, m, d).getTime();
+  if(per === 'w') return new Date(y, m, d - ((n.getDay() + 6) % 7)).getTime();
+  return new Date(y, m, 1).getTime();
+}
+const usedIn = r => { const s = periodStart(r.per); return log.ev.filter(e => e.k === 'b' && e.r === r.id && e.t >= s).length; };
+const perWord = per => per === 'd' ? 'сегодня' : per === 'w' ? 'на этой неделе' : 'в этом месяце';
+const raz = n => plural(n, 'раз', 'раза', 'раз');
+
+/* ================= odometer ================= */
+const odo = {key:'', strips:[], first:true};
+function odoSet(n){
+  n = Math.round(n);
+  const s = String(Math.abs(n)), el = $('#odo'), key = (n < 0 ? '-' : '+') + s.length;
+  el.setAttribute('aria-label', 'Баланс: ' + (n < 0 ? '\u2212' : '') + num(n));
+  $('#hero').style.setProperty('--odo', (s.length <= 4 ? 64 : s.length === 5 ? 54 : s.length === 6 ? 46 : s.length === 7 ? 40 : 34) + 'px');
+  if(odo.key !== key){
+    let h = n < 0 ? '<span class="sign" aria-hidden="true"></span>' : '';
+    for(let i = 0; i < s.length; i++){
+      if(i > 0 && (s.length - i) % 3 === 0) h += '<span class="gap"></span>';
+      h += '<span class="wheel" aria-hidden="true"><span class="strip">' + '0123456789'.replace(/\d/g, '<span>$&</span>') + '</span></span>';
+    }
+    el.innerHTML = h; odo.key = key; odo.strips = $$('.strip', el);
+    odo.strips.forEach(st => { st.style.transition = 'none'; st.style.transform = 'translateY(0)'; });
+    void el.offsetWidth;
+    const first = odo.first;
+    odo.strips.forEach((st, i) => { st.style.transition = ''; st.style.transitionDelay = first ? (i * 90) + 'ms' : ''; });
+    if(first) setTimeout(() => odo.strips.forEach(st => { st.style.transitionDelay = ''; }), 1600);
+  }
+  odo.strips.forEach((st, i) => { st.style.transform = 'translateY(' + (-10 * Number(s[i])) + '%)'; });
+  odo.first = false;
+}
+function setStat(sel, v){ const el = $(sel); el.textContent = v === 0 ? '0' : sgn(v); el.className = v > 0 ? 'up' : v < 0 ? 'dn' : ''; }
+function updateHero(){
+  odoSet(balance());
+  setStat('#sToday', perfSince(startOf(today())));
+  setStat('#sWeek', perfSince(startOf(addDays(today(), -6))));
+}
+
+/* ================= views ================= */
+const KIND = {e:'Выполнено', m:'Просрочка', p:'Штраф', b:'Обмен', a:'Корректировка'};
+const KIND_ICON = {e:'i-check', m:'i-clock', p:'i-warn', b:'i-gift', a:'i-sliders'};
+const icon = (id, cls) => '<svg class="ic' + (cls ? ' ' + cls : '') + '"><use href="#' + id + '"/></svg>';
+const empty = (t, d) => '<div class="empty"><div class="et">' + t + '</div><p>' + d + '</p></div>';
+const section = (title, cls, inner, extra) => '<section class="sec ' + (cls || '') + '"><div class="sec-h"><span>' + title + '</span>' + (extra || '') + '</div><div class="rows">' + inner + '</div></section>';
+
+function taskGroup(k){
+  const t = today();
+  if(k.done) return 'done';
+  if(k.due && k.due < t) return 'over';
+  if(k.due === t) return 'today';
+  return 'later';
+}
+function taskRow(k){
+  const t = today(), over = !k.done && k.due && k.due < t, meta = [];
+  if(k.done && k.rep) meta.push('<span>снова ' + humanDate(addDays(k.due, 1)) + '</span>');
+  else if(k.due && k.rep !== 'd'){
+    if(over){ const n = diffDays(t, k.due); meta.push('<span class="bad">просрочено на ' + n + '\u00a0' + plural(n, 'день', 'дня', 'дней') + '</span>'); }
+    else meta.push('<span>' + humanDate(k.due) + '</span>');
+  }
+  if(k.rep) meta.push('<span>' + icon('i-repeat', 's') + (k.rep === 'w' ? 'каждую неделю' : 'каждый день') + '</span>');
+  if(k.pen > 0 && k.due && !k.done) meta.push(k.missed && !k.rep ? '<span class="bad">штраф \u2212' + num(k.pen) + ' списан</span>' : '<span>штраф \u2212' + num(k.pen) + '</span>');
+  return '<div class="row' + (k.done ? ' is-done' : '') + '" data-act="edit" data-type="task" data-id="' + esc(k.id) + '">' +
+    '<button type="button" class="chk' + (k.done ? ' on' : '') + (over ? ' over' : '') + '" data-act="' + (k.done ? 'undone' : 'done') + '" data-id="' + esc(k.id) + '" aria-label="' + (k.done ? 'Отменить выполнение' : 'Выполнить') + '">' + (k.done ? icon('i-check') : '') + '</button>' +
+    '<div class="txt"><div class="t">' + esc(k.name) + '</div>' + (meta.length ? '<div class="m">' + meta.join('') + '</div>' : '') + '</div>' +
+    '<span class="pill earn">+' + num(k.pts) + '</span></div>';
+}
+function viewTasks(){
+  let h = '';
+  if(cfg.hint) h += '<div class="hint"><p>Круг слева отмечает выполнение. Нажми на саму запись, чтобы изменить вес, срок или удалить её.</p><button type="button" data-act="hint-off" aria-label="Скрыть подсказку">\u00d7</button></div>';
+  if(!cfg.tasks.length) return h + empty('Задач пока нет', 'Нажми «+», чтобы добавить первую. У каждой задачи свой вес и срок.');
+  const g = {over:[], today:[], later:[], done:[]};
+  cfg.tasks.forEach(k => g[taskGroup(k)].push(k));
+  const byDue = (a, b) => (a.due || '9999').localeCompare(b.due || '9999') || b.pts - a.pts;
+  g.over.sort(byDue); g.later.sort(byDue); g.today.sort((a, b) => b.pts - a.pts); g.done.sort((a, b) => a.name.localeCompare(b.name));
+  const rows = l => l.map(taskRow).join('');
+  const clr = g.done.some(k => !k.rep) ? '<button type="button" class="link" data-act="clear-done">Убрать выполненные</button>' : '';
+  if(!g.over.length && !g.today.length && !g.later.length) h += '<div class="empty" style="padding:28px 32px 4px"><div class="et">Всё выполнено</div><p>Можно обменять баллы на награду.</p></div>';
+  if(g.over.length) h += section('Просрочено', 'over', rows(g.over));
+  if(g.today.length) h += section('Сегодня', '', rows(g.today));
+  if(g.later.length) h += section('Дальше', '', rows(g.later));
+  if(g.done.length) h += section('Выполнено', '', rows(g.done), clr);
+  return h;
+}
+function viewPens(){
+  if(!cfg.pens.length) return empty('Штрафов пока нет', 'Добавь то, что хочешь пресекать: залипание в соцсетях, срыв режима. Одно нажатие спишет баллы.');
+  const wk = startOf(addDays(today(), -6));
+  const rows = cfg.pens.map(p => {
+    const c = log.ev.filter(e => e.k === 'p' && e.r === p.id && e.t >= wk).length;
+    return '<div class="row" data-act="edit" data-type="pen" data-id="' + esc(p.id) + '">' +
+      '<div class="txt"><div class="t">' + esc(p.name) + '</div>' + (c ? '<div class="m"><span>' + c + '\u00a0' + raz(c) + ' за 7 дней</span></div>' : '') + '</div>' +
+      '<button type="button" class="pill lose" data-act="pen" data-id="' + esc(p.id) + '" aria-label="Списать ' + p.pts + '">\u2212' + num(p.pts) + '</button></div>';
+  }).join('');
+  return section('Нажми на сумму, чтобы списать', '', rows);
+}
+function viewShop(){
+  if(!cfg.shop.length) return empty('Наград пока нет', 'Добавь, на что будешь менять баллы: время в соцсетях, покупка, вечер сериала.');
+  const bal = balance();
+  const rows = cfg.shop.slice().sort((a, b) => a.cost - b.cost).map(r => {
+    const used = r.lim > 0 ? usedIn(r) : 0, limited = r.lim > 0 && used >= r.lim, short = r.cost - bal, ok = !limited && short <= 0, meta = [];
+    if(r.lim > 0) meta.push('<span' + (limited ? ' class="bad"' : '') + '>использовано ' + used + ' из ' + r.lim + ' ' + perWord(r.per) + '</span>');
+    if(!limited && short > 0) meta.push('<span>не хватает ' + num(short) + '</span>');
+    return '<div class="row" data-act="edit" data-type="shop" data-id="' + esc(r.id) + '">' +
+      '<div class="txt"><div class="t">' + esc(r.name) + '</div>' + (meta.length ? '<div class="m">' + meta.join('') + '</div>' : '') + '</div>' +
+      '<button type="button" class="pill ' + (ok ? 'brass' : 'off') + '" data-act="buy" data-id="' + esc(r.id) + '" aria-label="Обменять ' + r.cost + '"' + (ok ? '' : ' aria-disabled="true"') + '>' + icon('i-coin') + num(r.cost) + '</button></div>';
+  }).join('');
+  return section('Доступно', '', rows, '<b class="avail">' + icon('i-coin', 's') + (bal < 0 ? '\u2212' : '') + num(bal) + '</b>');
+}
+function chartHTML(){
+  const nets = netByDay(), days = [];
+  for(let i = 6; i >= 0; i--) days.push(addDays(today(), -i));
+  const vals = days.map(d => nets[d] || 0), max = Math.max(1, ...vals.map(Math.abs));
+  return '<div class="chart">' + days.map((d, i) => {
+    const v = vals[i], h = Math.round(Math.abs(v) / max * 100);
+    return '<div class="col' + (i === 6 ? ' now' : '') + '"><div class="half up">' + (v > 0 ? '<i class="pos" style="height:' + h + '%"></i>' : '') + '</div>' +
+      '<div class="half dn">' + (v < 0 ? '<i class="neg" style="height:' + h + '%"></i>' : '') + '</div>' +
+      '<em>' + WD[pd(d).getDay()] + '</em><small class="' + (v > 0 ? 'p' : v < 0 ? 'n' : '') + '">' + (v ? sgn(v) : '0') + '</small></div>';
+  }).join('') + '</div>';
+}
+function histRow(e, i){
+  const cls = e.k === 'b' ? 'brass' : e.p > 0 ? 'earn' : 'lose';
+  return '<div class="row h"><span class="ico ' + cls + '">' + icon(KIND_ICON[e.k]) + '</span>' +
+    '<div class="txt"><div class="t">' + esc(e.n) + '</div><div class="m"><span>' + KIND[e.k] + '</span><span>' + hhmm(e.t) + '</span></div></div>' +
+    '<span class="pill ' + cls + '">' + sgn(e.p) + '</span>' +
+    '<button type="button" class="x" data-act="hdel" data-i="' + i + '" aria-label="Удалить запись">' + icon('i-x') + '</button></div>';
+}
+function viewHist(){
+  let h = '<section class="sec" style="margin-top:16px"><div class="sec-h"><span>Итог за 7 дней, без трат</span></div>' + chartHTML() + '</section>';
+  if(!log.ev.length) return h + empty('Записей пока нет', 'Здесь появятся выполненные задачи, штрафы и обмены. Кнопка «+» добавляет запись вручную.');
+  const nets = netByDay(), groups = []; let shown = 0;
+  for(let i = log.ev.length - 1; i >= 0 && shown < ui.hist; i--, shown++){
+    const e = log.ev[i], d = dayOf(e.t);
+    let g = groups[groups.length - 1];
+    if(!g || g.d !== d){ g = {d, rows:[]}; groups.push(g); }
+    g.rows.push(histRow(e, i));
+  }
+  groups.forEach(g => {
+    const v = nets[g.d] || 0;
+    h += section(dayLabel(g.d), '', g.rows.join(''), '<b class="' + (v > 0 ? 'up' : v < 0 ? 'dn' : '') + '">' + (v ? sgn(v) : '0') + '</b>');
+  });
+  if(shown < log.ev.length) h += '<div class="more"><button type="button" class="link" data-act="more">Показать ещё</button></div>';
+  return h;
+}
+const FAB_LABEL = {tasks:'Добавить задачу', pens:'Добавить штраф', shop:'Добавить награду', hist:'Добавить запись вручную'};
+function render(){
+  if(!cfg) return;
+  $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === ui.tab));
+  $('#view').innerHTML = ({tasks:viewTasks, pens:viewPens, shop:viewShop, hist:viewHist})[ui.tab]();
+  $('#fab').setAttribute('aria-label', FAB_LABEL[ui.tab]);
+  const t = today(), b = cfg.tasks.filter(k => !k.done && k.due && k.due <= t).length, el = $('#bdg');
+  el.hidden = !b; el.textContent = b;
+  renderedDay = t;
+  updateHero();
+}
+
+/* ================= toast / confirm / sheet ================= */
+let toastTimer = null;
+function toast(msg, canUndo){
+  const el = $('#toast');
+  el.innerHTML = '<span class="tm">' + esc(msg) + '</span>' + (canUndo ? '<button type="button" data-act="undo">Отменить</button>' : '');
+  el.classList.add('on'); document.body.classList.add('toast-on');
+  clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, canUndo ? 5500 : 3400);
+}
+function hideToast(){ $('#toast').classList.remove('on'); document.body.classList.remove('toast-on'); }
+
+let dlgCb = null, popupOpen = false;
+function dlgOpen(msg, ok, danger, cb){
+  $('#dlg-msg').textContent = msg;
+  const b = $('#dlg-ok'); b.textContent = ok; b.className = 'ok' + (danger ? ' bad' : '');
+  dlgCb = cb; $('#dlg').classList.add('on');
+}
+function dlgClose(){ $('#dlg').classList.remove('on'); dlgCb = null; }
+function ask(msg, okText, danger, cb){
+  if(ver('6.2') && tg.showPopup && !popupOpen){
+    try {
+      popupOpen = true;
+      tg.showPopup({message: msg.slice(0, 250), buttons: [{id:'ok', type: danger ? 'destructive' : 'default', text: okText.slice(0, 60)}, {id:'no', type:'cancel'}]},
+        id => { popupOpen = false; if(id === 'ok') cb(); });
+      return;
+    } catch(e){ popupOpen = false; }
+  }
+  dlgOpen(msg, okText, danger, cb);
+}
+
+function showBack(on){ if(!ver('6.1')) return; try { on ? tg.BackButton.show() : tg.BackButton.hide(); } catch(e){} }
+function openSheet(html){
+  const s = $('#sheet');
+  s.innerHTML = '<div class="grab"></div>' + html;
+  s.classList.add('on'); s.setAttribute('aria-hidden', 'false'); s.scrollTop = 0;
+  $('#scrim').classList.add('on'); document.body.classList.add('lock'); showBack(true);
+}
+function closeSheet(){
+  $('#sheet').classList.remove('on'); $('#sheet').setAttribute('aria-hidden', 'true');
+  $('#scrim').classList.remove('on'); document.body.classList.remove('lock'); showBack(false);
+  sheetCtx = null;
+  if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+}
+const sheetOpen = () => $('#sheet').classList.contains('on');
+
+const chipsHTML = (target, vals) => '<div class="chips" data-chips="' + target + '">' + vals.map(v => '<button type="button" class="chip" data-val="' + v + '">' + v + '</button>').join('') + '</div>';
+const quickHTML = list => '<div class="chips">' + list.map(q => '<button type="button" class="chip" data-quick="' + q[0] + '">' + q[1] + '</button>').join('') + '</div>';
+const segHTML = (key, opts, cur) => '<div class="seg" data-seg="' + key + '">' + opts.map(o => '<button type="button" data-val="' + o[0] + '" class="' + (String(o[0]) === String(cur) ? 'on' : '') + '">' + o[1] + '</button>').join('') + '</div>';
+const inputHTML = (id, val, extra) => '<input id="f-' + id + '" class="in" autocomplete="off" ' + (extra || '') + ' value="' + esc(val) + '">';
+const numAttrs = 'inputmode="numeric" pattern="[0-9]*" maxlength="7"';
+const errHTML = id => '<div class="err" id="e-' + id + '"></div>';
+function syncChips(inp){
+  if(!inp || !inp.id) return;
+  $$('[data-chips="' + inp.id + '"] .chip').forEach(c => c.classList.toggle('on', c.dataset.val === inp.value.trim()));
+}
+function syncAllChips(){ $$('#sheet .in').forEach(syncChips); }
+function clearErrs(){ $$('#sheet .err').forEach(e => { e.textContent = ''; }); $$('#sheet .in.bad').forEach(i => i.classList.remove('bad')); }
+function showErr(id, msg){ const e = $('#e-' + id), i = $('#f-' + id); if(e) e.textContent = msg; if(i) i.classList.add('bad'); }
+function numVal(id, allowEmpty){
+  const v = $('#f-' + id).value.replace(/\s/g, '');
+  if(v === '' && allowEmpty) return 0;
+  return /^\d+$/.test(v) ? parseInt(v, 10) : NaN;
+}
+function focusName(){ setTimeout(() => { const el = $('#f-name'); if(el && sheetOpen()) el.focus(); }, 320); }
+
+const sheetHTML = (title, body, foot, del) => '<div class="sh"><h2>' + title + '</h2>' + (del ? '<button type="button" class="link bad" data-sheet="del">Удалить</button>' : '') + '</div>' + body + '<div class="foot">' + (foot || '') + '</div>';
+const saveBtn = '<button type="button" class="btn" data-sheet="save">Сохранить</button>';
+
+function openTask(id){
+  const k = id ? cfg.tasks.find(x => x.id === id) : null;
+  if(id && !k) return;
+  const v = k || {name:'', pts:5, pen:5, due:'', rep:''};
+  sheetCtx = {type:'task', id: id || null, seg:{rep: v.rep}, penTouched: !!k};
+  openSheet(sheetHTML(k ? 'Изменить задачу' : 'Новая задача',
+    '<div class="f"><label for="f-name">Название</label>' + inputHTML('name', v.name, 'maxlength="80" placeholder="Что нужно сделать"') + errHTML('name') + '</div>' +
+    '<div class="f"><label for="f-pts">Награда за выполнение</label>' + inputHTML('pts', v.pts, numAttrs) + chipsHTML('f-pts', [1, 2, 3, 5, 8, 13, 20, 50]) + errHTML('pts') + '</div>' +
+    '<div class="f"><label for="f-due">Срок</label>' + inputHTML('due', v.due, 'type="date"') + quickHTML([['today', 'Сегодня'], ['tomorrow', 'Завтра'], ['week', '+7 дней'], ['none', 'Без срока']]) + '</div>' +
+    '<div class="f"><span class="lab">Повтор</span>' + segHTML('rep', [['', 'Нет'], ['d', 'Ежедневно'], ['w', 'Еженедельно']], v.rep) + '<div class="help">У повторяющейся задачи срок переносится сам.</div></div>' +
+    '<div class="f"><label for="f-pen">Штраф за просрочку</label>' + inputHTML('pen', v.pen, numAttrs) + errHTML('pen') + '<div class="help">Спишется, если срок прошёл, а задача не выполнена. Без срока штрафа нет.</div></div>',
+    saveBtn, !!k));
+  syncAllChips(); if(!k) focusName();
+}
+function openPen(id){
+  const p = id ? cfg.pens.find(x => x.id === id) : null;
+  if(id && !p) return;
+  const v = p || {name:'', pts:5};
+  sheetCtx = {type:'pen', id: id || null, seg:{}};
+  openSheet(sheetHTML(p ? 'Изменить штраф' : 'Новый штраф',
+    '<div class="f"><label for="f-name">Что случилось</label>' + inputHTML('name', v.name, 'maxlength="80" placeholder="Например, залип в соцсетях"') + errHTML('name') + '</div>' +
+    '<div class="f"><label for="f-pts">Сколько баллов списать</label>' + inputHTML('pts', v.pts, numAttrs) + chipsHTML('f-pts', [1, 2, 3, 5, 8, 13, 20, 50]) + errHTML('pts') + '</div>',
+    saveBtn, !!p));
+  syncAllChips(); if(!p) focusName();
+}
+function openShop(id){
+  const r = id ? cfg.shop.find(x => x.id === id) : null;
+  if(id && !r) return;
+  const v = r || {name:'', cost:10, lim:0, per:'m'};
+  sheetCtx = {type:'shop', id: id || null, seg:{per: v.per}};
+  openSheet(sheetHTML(r ? 'Изменить награду' : 'Новая награда',
+    '<div class="f"><label for="f-name">Название</label>' + inputHTML('name', v.name, 'maxlength="80" placeholder="На что меняешь баллы"') + errHTML('name') + '</div>' +
+    '<div class="f"><label for="f-cost">Цена в баллах</label>' + inputHTML('cost', v.cost, numAttrs) + chipsHTML('f-cost', [5, 10, 20, 50, 100, 200, 500]) + errHTML('cost') + '</div>' +
+    '<div class="f"><label for="f-lim">Лимит, раз за период</label>' + inputHTML('lim', v.lim, numAttrs) + errHTML('lim') + '<div class="help">0 означает без лимита.</div></div>' +
+    '<div class="f"><span class="lab">Период лимита</span>' + segHTML('per', [['d', 'День'], ['w', 'Неделя'], ['m', 'Месяц']], v.per) + '</div>',
+    saveBtn, !!r));
+  syncAllChips(); if(!r) focusName();
+}
+function openAdj(){
+  sheetCtx = {type:'adj', id:null, seg:{sign:'+'}};
+  openSheet(sheetHTML('Запись вручную',
+    '<div class="f"><span class="lab">Тип</span>' + segHTML('sign', [['+', 'Начислить'], ['-', 'Списать']], '+') + '</div>' +
+    '<div class="f"><label for="f-name">Причина</label>' + inputHTML('name', '', 'maxlength="80" placeholder="За что"') + errHTML('name') + '</div>' +
+    '<div class="f"><label for="f-pts">Сколько баллов</label>' + inputHTML('pts', 5, numAttrs) + chipsHTML('f-pts', [1, 2, 3, 5, 8, 13, 20, 50]) + errHTML('pts') + '</div>',
+    saveBtn));
+  syncAllChips(); focusName();
+}
+function openSettings(){
+  sheetCtx = {type:'settings', id:null, seg:{}};
+  const where = hasCloud ? (sync === 'err' ? 'Не удалось записать в облако Telegram. Данные сохранены на устройстве, повторю позже.' : 'Данные хранятся в облаке Telegram и доступны на всех твоих устройствах.')
+    : localOK ? 'Данные хранятся только в этом браузере. Открой приложение из Telegram, чтобы они сохранялись в облаке.'
+    : 'Браузер не даёт сохранять данные. Открой приложение из Telegram.';
+  openSheet(sheetHTML('Настройки',
+    '<p class="help" style="margin:-6px 0 18px">' + where + '</p>' +
+    '<div class="f"><label for="f-json">Копия данных</label><textarea id="f-json" class="in" rows="5" spellcheck="false"></textarea>' +
+    '<div class="help">Скопируй текст и сохрани. Чтобы восстановить, вставь его сюда и нажми «Загрузить».</div></div>' +
+    '<div class="btns"><button type="button" class="btn sub" data-sheet="copy">Скопировать</button><button type="button" class="btn sub" data-sheet="import">Загрузить</button></div>' +
+    '<button type="button" class="btn ghost" data-sheet="reset">Стереть всё и начать заново</button>', ''));
+  $('#f-json').value = JSON.stringify({v:1, cfg, log});
+}
+
+/* ---------- save handlers ---------- */
+function saveTask(){
+  clearErrs();
+  const name = $('#f-name').value.trim(), pts = numVal('pts'), pen = numVal('pen', true); let ok = true;
+  if(!name){ showErr('name', 'Введи название'); ok = false; }
+  if(!(pts >= 1)){ showErr('pts', 'Введи число больше нуля'); ok = false; }
+  if(isNaN(pen)){ showErr('pen', 'Введи число или 0'); ok = false; }
+  if(!ok){ hap('error'); return; }
+  const rep = sheetCtx.seg.rep; let due = $('#f-due').value;
+  if(!isDate(due)) due = '';
+  if(rep && (!due || due < today())) due = today();
+  snap();
+  let k = sheetCtx.id ? cfg.tasks.find(x => x.id === sheetCtx.id) : null;
+  if(!k){ k = {id: uid(), done: false, missed: false}; cfg.tasks.push(k); }
+  const dueChanged = k.due !== due;
+  Object.assign(k, {name, pts, pen, due, rep});
+  if(dueChanged) k.missed = !!(due && due < today());   // a deadline set in the past is not fined retroactively
+  closeSheet(); commit(); hap('light');
+}
+function savePen(){
+  clearErrs();
+  const name = $('#f-name').value.trim(), pts = numVal('pts'); let ok = true;
+  if(!name){ showErr('name', 'Введи название'); ok = false; }
+  if(!(pts >= 1)){ showErr('pts', 'Введи число больше нуля'); ok = false; }
+  if(!ok){ hap('error'); return; }
+  snap();
+  let p = sheetCtx.id ? cfg.pens.find(x => x.id === sheetCtx.id) : null;
+  if(!p){ p = {id: uid()}; cfg.pens.push(p); }
+  Object.assign(p, {name, pts});
+  closeSheet(); commit(); hap('light');
+}
+function saveShop(){
+  clearErrs();
+  const name = $('#f-name').value.trim(), cost = numVal('cost'), lim = numVal('lim', true); let ok = true;
+  if(!name){ showErr('name', 'Введи название'); ok = false; }
+  if(!(cost >= 1)){ showErr('cost', 'Введи число больше нуля'); ok = false; }
+  if(isNaN(lim)){ showErr('lim', 'Введи число или 0'); ok = false; }
+  if(!ok){ hap('error'); return; }
+  snap();
+  let r = sheetCtx.id ? cfg.shop.find(x => x.id === sheetCtx.id) : null;
+  if(!r){ r = {id: uid()}; cfg.shop.push(r); }
+  Object.assign(r, {name, cost, lim, per: sheetCtx.seg.per});
+  closeSheet(); commit(); hap('light');
+}
+function saveAdj(){
+  clearErrs();
+  const name = $('#f-name').value.trim(), pts = numVal('pts'); let ok = true;
+  if(!name){ showErr('name', 'Введи причину'); ok = false; }
+  if(!(pts >= 1)){ showErr('pts', 'Введи число больше нуля'); ok = false; }
+  if(!ok){ hap('error'); return; }
+  snap(); addEvent('a', name, sheetCtx.seg.sign === '-' ? -pts : pts);
+  closeSheet(); commit(); hap('light');
+}
+function deleteItem(){
+  const c = sheetCtx, list = c.type === 'task' ? cfg.tasks : c.type === 'pen' ? cfg.pens : cfg.shop, it = list.find(x => x.id === c.id);
+  if(!it) return;
+  ask('Удалить «' + it.name + '»?', 'Удалить', true, () => {
+    snap(); list.splice(list.indexOf(it), 1);
+    closeSheet(); commit(); toast('Удалено: «' + it.name + '»', true);
+  });
+}
+async function copyJson(){
+  const ta = $('#f-json'); let ok = false;
+  try { await navigator.clipboard.writeText(ta.value); ok = true; } catch(e){}
+  if(!ok){ try { ta.focus(); ta.select(); ok = document.execCommand('copy'); } catch(e){} }
+  toast(ok ? 'Скопировано' : 'Не получилось скопировать, выдели текст вручную');
+}
+function importJson(){
+  let d; try { d = JSON.parse($('#f-json').value); } catch(e){ toast('Не удалось прочитать текст. Вставь его целиком'); hap('error'); return; }
+  if(!d || !d.cfg || !Array.isArray(d.cfg.tasks) || !d.log || !Array.isArray(d.log.ev)){ toast('В тексте нет данных приложения'); hap('error'); return; }
+  ask('Заменить все текущие данные данными из поля?', 'Заменить', true, () => {
+    snap(); cfg = normCfg(d.cfg); log = normLog(d.log);
+    closeSheet(); commit(); toast('Данные загружены', true);
+  });
+}
+function resetAll(){
+  ask('Удалить все задачи, награды и историю и начать заново?', 'Стереть всё', true, () => {
+    snap(); cfg = seedCfg(); log = seedLog();
+    closeSheet(); commit(); toast('Данные сброшены', true);
+  });
+}
+function sheetAction(a){
+  const t = sheetCtx && sheetCtx.type;
+  if(a === 'save'){ ({task:saveTask, pen:savePen, shop:saveShop, adj:saveAdj})[t](); }
+  else if(a === 'del') deleteItem();
+  else if(a === 'copy') copyJson();
+  else if(a === 'import') importJson();
+  else if(a === 'reset') resetAll();
+}
+
+/* ================= actions ================= */
+function doTask(id, btn){
+  const k = cfg.tasks.find(x => x.id === id);
+  if(!k || k.done) return;
+  snap(); k.done = true; addEvent('e', k.name, k.pts, k.id);
+  save(); hap('success'); toast('+' + num(k.pts) + ' за «' + k.name + '»', true);
+  if(btn){ btn.classList.add('on', 'pop'); btn.innerHTML = icon('i-check'); setTimeout(render, 260); } else render();
+}
+function undoTask(id){
+  const k = cfg.tasks.find(x => x.id === id);
+  if(!k) return;
+  ask('Отменить выполнение «' + k.name + '»? Начисленные баллы снимутся.', 'Отменить выполнение', true, () => {
+    snap(); k.done = false;
+    for(let i = log.ev.length - 1; i >= 0; i--){ if(log.ev[i].k === 'e' && log.ev[i].r === id){ log.ev.splice(i, 1); break; } }
+    commit(); toast('Выполнение отменено', true);
+  });
+}
+function doPen(id){
+  const p = cfg.pens.find(x => x.id === id);
+  if(!p) return;
+  snap(); addEvent('p', p.name, -p.pts, p.id);
+  commit(); hap('warning'); toast('\u2212' + num(p.pts) + ': «' + p.name + '»', true);
+}
+function doBuy(id){
+  const r = cfg.shop.find(x => x.id === id);
+  if(!r) return;
+  if(r.lim > 0 && usedIn(r) >= r.lim){ hap('error'); toast('Лимит исчерпан: ' + r.lim + '\u00a0' + raz(r.lim) + ' ' + perWord(r.per)); return; }
+  const bal = balance();
+  if(bal < r.cost){ hap('error'); toast('Не хватает ' + num(r.cost - bal) + ' для «' + r.name + '»'); return; }
+  ask('Обменять ' + num(r.cost) + ' на «' + r.name + '»?', 'Обменять', false, () => {
+    snap(); addEvent('b', r.name, -r.cost, r.id);
+    commit(); hap('success'); toast('Обменено: «' + r.name + '», \u2212' + num(r.cost), true);
+  });
+}
+function delEvent(i){
+  const e = log.ev[i];
+  if(!e) return;
+  ask('Удалить запись «' + e.n + '» (' + sgn(e.p) + ')? Баланс пересчитается.', 'Удалить', true, () => {
+    if(log.ev[i] !== e) return;
+    snap(); log.ev.splice(i, 1); commit(); toast('Запись удалена', true);
+  });
+}
+function clearDone(){
+  const n = cfg.tasks.filter(k => k.done && !k.rep).length;
+  if(!n) return;
+  ask('Убрать выполненные задачи из списка? Баланс и история не изменятся.', 'Убрать', false, () => {
+    snap(); cfg.tasks = cfg.tasks.filter(k => !(k.done && !k.rep)); commit(); toast('Убрано: ' + n, true);
+  });
+}
+function setTab(t){ if(ui.tab === t){ window.scrollTo(0, 0); return; } ui.tab = t; hap('select'); render(); window.scrollTo(0, 0); $('#fab').classList.remove('hide'); }
+
+/* ================= events ================= */
+function bind(){
+  $('#view').addEventListener('click', e => {
+    const a = e.target.closest('[data-act]');
+    if(!a) return;
+    const id = a.dataset.id;
+    switch(a.dataset.act){
+      case 'done': doTask(id, a); break;
+      case 'undone': undoTask(id); break;
+      case 'pen': doPen(id); break;
+      case 'buy': doBuy(id); break;
+      case 'edit': (a.dataset.type === 'task' ? openTask : a.dataset.type === 'pen' ? openPen : openShop)(id); break;
+      case 'hdel': delEvent(+a.dataset.i); break;
+      case 'more': ui.hist += 60; render(); break;
+      case 'clear-done': clearDone(); break;
+      case 'hint-off': cfg.hint = false; save(); render(); break;
+    }
+  });
+  $('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if(b) setTab(b.dataset.tab); });
+  $('#fab').addEventListener('click', () => ({tasks:openTask, pens:openPen, shop:openShop, hist:openAdj})[ui.tab]());
+  $('#btnSettings').addEventListener('click', openSettings);
+  $('#toast').addEventListener('click', e => { if(e.target.closest('[data-act="undo"]')) undo(); });
+  $('#scrim').addEventListener('click', closeSheet);
+  $('#dlg-ok').addEventListener('click', () => { const cb = dlgCb; dlgClose(); if(cb) cb(); });
+  $('#dlg-no').addEventListener('click', dlgClose);
+  const sheet = $('#sheet');
+  sheet.addEventListener('click', e => {
+    const chip = e.target.closest('[data-chips] .chip');
+    if(chip){
+      const inp = $('#' + chip.parentNode.dataset.chips);
+      inp.value = chip.dataset.val; inp.dispatchEvent(new Event('input', {bubbles: true})); hap('select'); return;
+    }
+    const q = e.target.closest('[data-quick]');
+    if(q){
+      const v = q.dataset.quick, due = $('#f-due');
+      due.value = v === 'today' ? today() : v === 'tomorrow' ? addDays(today(), 1) : v === 'week' ? addDays(today(), 7) : '';
+      hap('select'); return;
+    }
+    const sg = e.target.closest('[data-seg] button');
+    if(sg){
+      const box = sg.parentNode;
+      $$('button', box).forEach(b => b.classList.toggle('on', b === sg));
+      if(sheetCtx) sheetCtx.seg[box.dataset.seg] = sg.dataset.val;
+      hap('select'); return;
+    }
+    const act = e.target.closest('[data-sheet]');
+    if(act) sheetAction(act.dataset.sheet);
+  });
+  sheet.addEventListener('input', e => {
+    const t = e.target; syncChips(t);
+    if(!sheetCtx || sheetCtx.type !== 'task') return;
+    if(t.id === 'f-pts' && !sheetCtx.penTouched){ const p = $('#f-pen'); p.value = t.value; syncChips(p); }
+    if(t.id === 'f-pen') sheetCtx.penTouched = true;
+  });
+  sheet.addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); sheetAction('save'); } });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape'){ if($('#dlg').classList.contains('on')) dlgClose(); else if(sheetOpen()) closeSheet(); } });
+  document.addEventListener('visibilitychange', () => { if(!document.hidden) refreshDay(); });
+  setInterval(refreshDay, 60000);
+  let lastY = 0;
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY, fab = $('#fab');
+    if(y < 40 || y < lastY - 6 || innerHeight + y >= document.body.scrollHeight - 4) fab.classList.remove('hide');
+    else if(y > lastY + 6) fab.classList.add('hide');
+    lastY = y;
+  }, {passive: true});
+}
+function refreshDay(){
+  if(!cfg) return;
+  const r = tick();
+  if(r.changed || r.n){ commit(); notifyMiss(r); } else if(renderedDay !== today()) render();
+}
+
+function applyTheme(){
+  const dark = inTG ? tg.colorScheme === 'dark' : !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  if(!inTG) return;
+  try {
+    if(ver('6.9')){
+      const bg = dark ? '#0f141d' : '#eff1f5';
+      tg.setHeaderColor(bg); tg.setBackgroundColor(bg);
+      if(ver('7.10')) tg.setBottomBarColor(dark ? '#161c27' : '#ffffff');
+    } else { tg.setHeaderColor('bg_color'); tg.setBackgroundColor('bg_color'); }
+  } catch(e){}
+}
+
+/* ================= init ================= */
+async function init(){
+  applyTheme();
+  if(inTG){
+    try {
+      tg.ready(); tg.expand();
+      if(ver('7.7')) tg.disableVerticalSwipes();
+      tg.onEvent('themeChanged', applyTheme);
+      if(ver('6.1')) tg.BackButton.onClick(() => { if($('#dlg').classList.contains('on')) dlgClose(); else closeSheet(); });
+    } catch(e){}
+  }
+  bind();
+  const [c, l] = await Promise.all([loadDoc('cfg', seedCfg), loadDoc('log', seedLog)]);
+  cfg = normCfg(c.d); log = normLog(l.d);
+  if(!c.fresh) lastBody.cfg = bodyOf(cfg);
+  if(!l.fresh) lastBody.log = bodyOf(log);
+  const r = tick();
+  save(); render(); notifyMiss(r);
+}
+init();
+})();
+</script>
+</body>
+</html>
